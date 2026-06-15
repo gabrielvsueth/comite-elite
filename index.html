@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comitê ELITE – Painel de Gestão</title>
+<style>
+  :root {
+    --satisfeito: #16a34a; --satisfeito-bg: #dcfce7; --satisfeito-border: #86efac;
+    --estavel: #2563eb; --estavel-bg: #dbeafe; --estavel-border: #93c5fd;
+    --atencao: #d97706; --atencao-bg: #fef3c7; --atencao-border: #fcd34d;
+    --critico: #dc2626; --critico-bg: #fee2e2; --critico-border: #fca5a5;
+    --saindo: #6b7280; --saindo-bg: #f3f4f6; --saindo-border: #d1d5db;
+    --sem-reg: #9ca3af; --sem-reg-bg: #f9fafb; --sem-reg-border: #e5e7eb;
+    --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --muted: #64748b;
+    --border: #e2e8f0; --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+  /* HEADER */
+  .header { background: #0f172a; color: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .header h1 span { color: #f59e0b; }
+  .header-meta { font-size: 12px; color: #94a3b8; }
+
+  /* SUMMARY */
+  .summary { display: flex; gap: 10px; padding: 16px 24px 0; flex-wrap: wrap; }
+  .summary-card { flex: 1; min-width: 110px; border-radius: var(--radius); padding: 12px 16px; cursor: pointer; border: 2px solid transparent; transition: all .15s; }
+  .summary-card:hover { transform: translateY(-2px); }
+  .summary-card.active { border-width: 2px; }
+  .summary-card .count { font-size: 28px; font-weight: 800; line-height: 1; }
+  .summary-card .label { font-size: 11px; font-weight: 600; text-transform: uppercase; margin-top: 4px; opacity: .8; }
+  .sc-satisfeito { background: var(--satisfeito-bg); color: var(--satisfeito); }
+  .sc-satisfeito.active { border-color: var(--satisfeito); }
+  .sc-estavel { background: var(--estavel-bg); color: var(--estavel); }
+  .sc-estavel.active { border-color: var(--estavel); }
+  .sc-atencao { background: var(--atencao-bg); color: var(--atencao); }
+  .sc-atencao.active { border-color: var(--atencao); }
+  .sc-critico { background: var(--critico-bg); color: var(--critico); }
+  .sc-critico.active { border-color: var(--critico); }
+  .sc-saindo { background: var(--saindo-bg); color: var(--saindo); }
+  .sc-saindo.active { border-color: var(--saindo); }
+  .sc-todos { background: #e2e8f0; color: #334155; }
+  .sc-todos.active { border-color: #334155; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 0; padding: 16px 24px 0; border-bottom: none; }
+  .tab-btn { padding: 8px 20px; cursor: pointer; border: none; background: #e2e8f0; color: var(--muted); font-size: 13px; font-weight: 600; border-radius: 8px 8px 0 0; margin-right: 4px; }
+  .tab-btn.active { background: var(--card); color: var(--text); box-shadow: 0 -2px 0 #f59e0b inset; }
+
+  /* MAIN CONTENT */
+  .content { padding: 0 24px 32px; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* SEARCH */
+  .toolbar { display: flex; gap: 10px; padding: 16px 0 12px; align-items: center; flex-wrap: wrap; }
+  .search-box { flex: 1; min-width: 200px; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; outline: none; background: white; }
+  .search-box:focus { border-color: #f59e0b; }
+
+  /* CLIENT GRID */
+  .client-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .client-card { background: var(--card); border-radius: var(--radius); border: 1.5px solid var(--border); padding: 14px 16px; cursor: pointer; transition: all .15s; position: relative; }
+  .client-card:hover { border-color: #f59e0b; box-shadow: 0 4px 12px rgba(0,0,0,.08); transform: translateY(-1px); }
+  .client-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .client-name { font-weight: 700; font-size: 13px; line-height: 1.3; flex: 1; padding-right: 8px; }
+  .badge { padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+  .badge-satisfeito { background: var(--satisfeito-bg); color: var(--satisfeito); border: 1px solid var(--satisfeito-border); }
+  .badge-estavel { background: var(--estavel-bg); color: var(--estavel); border: 1px solid var(--estavel-border); }
+  .badge-atencao { background: var(--atencao-bg); color: var(--atencao); border: 1px solid var(--atencao-border); }
+  .badge-critico { background: var(--critico-bg); color: var(--critico); border: 1px solid var(--critico-border); }
+  .badge-saindo { background: var(--saindo-bg); color: var(--saindo); border: 1px solid var(--saindo-border); }
+  .badge-sem_registro { background: var(--sem-reg-bg); color: var(--sem-reg); border: 1px solid var(--sem-reg-border); }
+  .client-meta { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .client-resumo { font-size: 12px; color: #475569; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .client-updated { font-size: 10px; color: #94a3b8; margin-top: 8px; }
+  .hidden { display: none !important; }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal-overlay.hidden { display: none; }
+  .modal { background: white; border-radius: 14px; width: 100%; max-width: 720px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
+  .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; }
+  .modal-title { font-size: 18px; font-weight: 800; }
+  .modal-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--muted); padding: 0 4px; }
+  .modal-body { overflow-y: auto; padding: 20px 24px; flex: 1; }
+  .modal-section { margin-bottom: 20px; }
+  .modal-section h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--muted); letter-spacing: .5px; margin-bottom: 10px; }
+  .history-item { border-left: 3px solid var(--border); padding: 8px 0 8px 14px; margin-bottom: 12px; }
+  .history-date { font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+  .history-text { font-size: 13px; color: #334155; line-height: 1.6; }
+  .actions-list { list-style: none; }
+  .actions-list li { padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; display: flex; gap: 8px; }
+  .actions-list li:last-child { border-bottom: none; }
+  .action-owner { font-weight: 600; color: #0f172a; white-space: nowrap; }
+
+  /* MEETINGS TAB */
+  .meeting-list { display: flex; flex-direction: column; gap: 12px; padding-top: 16px; }
+  .meeting-card { background: var(--card); border-radius: var(--radius); border: 1.5px solid var(--border); overflow: hidden; }
+  .meeting-header { padding: 14px 18px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+  .meeting-header:hover { background: #f8fafc; }
+  .meeting-date { font-weight: 800; font-size: 14px; }
+  .meeting-summ { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .meeting-toggle { font-size: 18px; color: var(--muted); transition: transform .2s; }
+  .meeting-toggle.open { transform: rotate(180deg); }
+  .meeting-body { display: none; padding: 0 18px 18px; }
+  .meeting-body.open { display: block; }
+  .meeting-detail { margin-bottom: 16px; }
+  .meeting-detail h4 { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); letter-spacing: .5px; margin-bottom: 8px; }
+  .meeting-detail p { font-size: 13px; color: #334155; line-height: 1.6; }
+  .client-mention { display: inline-block; padding: 2px 8px; margin: 2px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; }
+  .actions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 6px; margin-top: 6px; }
+  .action-item { background: #f8fafc; border-radius: 6px; padding: 8px 10px; font-size: 12px; border: 1px solid var(--border); }
+  .action-item .owner { font-weight: 700; color: #0f172a; }
+
+  /* INDEFINIDO */
+  .indefinido-section { background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: var(--radius); padding: 16px; margin-top: 16px; }
+  .indefinido-section h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #ea580c; margin-bottom: 10px; }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+
+  /* ====== AUTH OVERLAY ====== */
+  #auth-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #0f172a;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #auth-box {
+    background: #1e293b; border-radius: 14px; padding: 44px 52px;
+    text-align: center; min-width: 320px;
+    box-shadow: 0 24px 64px rgba(0,0,0,.6);
+  }
+  #auth-box h2 { color: white; font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+  #auth-box h2 span { color: #f59e0b; }
+  #auth-box p { color: #94a3b8; font-size: 13px; margin-bottom: 28px; }
+  #auth-input {
+    width: 100%; padding: 13px 16px; font-size: 16px;
+    border-radius: 8px; border: 2px solid #334155;
+    background: #0f172a; color: white; outline: none;
+    text-align: center; letter-spacing: 3px; margin-bottom: 12px;
+  }
+  #auth-input:focus { border-color: #f59e0b; }
+  #auth-btn {
+    width: 100%; padding: 13px; font-size: 15px; font-weight: 700;
+    background: #f59e0b; color: #0f172a; border: none;
+    border-radius: 8px; cursor: pointer; transition: background .15s;
+  }
+  #auth-btn:hover { background: #d97706; }
+  #auth-error { color: #f87171; font-size: 12px; margin-top: 10px; min-height: 18px; }
+  /* ====== FIM AUTH OVERLAY ====== */
+</style>
+</head>
+<body>
+
+<!-- ====== AUTH OVERLAY ====== -->
+<div id="auth-overlay">
+  <div id="auth-box">
+    <h2>Comitê <span>ELITE</span></h2>
+    <p>Painel de Gestão · Sales Club</p>
+    <input id="auth-input" type="password" placeholder="Senha" autocomplete="off">
+    <button id="auth-btn">Entrar →</button>
+    <div id="auth-error"></div>
+  </div>
+</div>
+<script>
+// Oculta overlay imediatamente se já autenticado nesta sessão
+(function() {
+  if (sessionStorage.getItem('elite_auth') === '1') {
+    document.addEventListener('DOMContentLoaded', function() {
+      var ov = document.getElementById('auth-overlay');
+      if (ov) ov.style.display = 'none';
+    });
+  }
+})();
+</script>
+<!-- ====== FIM AUTH OVERLAY ====== -->
+
+<div class="header">
+  <div>
+    <h1>Comitê <span>ELITE</span> — Painel de Gestão</h1>
+    <div class="header-meta">Sales Club · Carteira de clientes ativos · Última reunião: 15/06/2026</div>
+  </div>
+  <div class="header-meta" id="total-label"></div>
+</div>
+<!-- Atualizado em: 15/06/2026 -->
+
+<!-- SUMMARY CARDS -->
+<div class="summary" id="summary-cards">
+  <div class="summary-card sc-todos active" data-filter="todos" onclick="filterClients('todos', this)">
+    <div class="count" id="cnt-todos">0</div><div class="label">Total</div>
+  </div>
+  <div class="summary-card sc-satisfeito" data-filter="satisfeito" onclick="filterClients('satisfeito', this)">
+    <div class="count" id="cnt-satisfeito">0</div><div class="label">Satisfeito</div>
+  </div>
+  <div class="summary-card sc-estavel" data-filter="estavel" onclick="filterClients('estavel', this)">
+    <div class="count" id="cnt-estavel">0</div><div class="label">Estável</div>
+  </div>
+  <div class="summary-card sc-atencao" data-filter="atencao" onclick="filterClients('atencao', this)">
+    <div class="count" id="cnt-atencao">0</div><div class="label">Atenção</div>
+  </div>
+  <div class="summary-card sc-critico" data-filter="critico" onclick="filterClients('critico', this)">
+    <div class="count" id="cnt-critico">0</div><div class="label">Crítico</div>
+  </div>
+  <div class="summary-card sc-saindo" data-filter="saindo" onclick="filterClients('saindo', this)">
+    <div class="count" id="cnt-saindo">0</div><div class="label">Saindo</div>
+  </div>
+  <div class="summary-card sc-todos" data-filter="sem_registro" onclick="filterClients('sem_registro', this)" style="background:#f1f5f9;color:#64748b;">
+    <div class="count" id="cnt-sem_registro">0</div><div class="label">Sem Reg.</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div style="padding: 0 24px;">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('carteira', this)">🏢 Carteira</button>
+    <button class="tab-btn" onclick="switchTab('reunioes', this)">📋 Reuniões</button>
+  </div>
+</div>
+
+<div class="content">
+  <!-- TAB CARTEIRA -->
+  <div id="tab-carteira" class="tab-pane active">
+    <div class="toolbar">
+      <input type="text" class="search-box" placeholder="🔍 Buscar cliente, sponsor ou champion..." oninput="searchClients(this.value)">
+    </div>
+    <div class="client-grid" id="client-grid"></div>
+    <div class="empty hidden" id="empty-state">Nenhum cliente encontrado para esse filtro.</div>
+  </div>
+
+  <!-- TAB REUNIÕES -->
+  <div id="tab-reunioes" class="tab-pane">
+    <div class="meeting-list" id="meeting-list"></div>
+    <div class="indefinido-section" id="indefinido-section" style="display:none">
+      <h3>⚠️ Clientes Indefinidos — aguardando conciliação</h3>
+      <div id="indefinido-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay hidden" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-title"></div>
+        <div class="modal-sub" id="modal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModalBtn()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ==============================
+// AUTH
+// ==============================
+const AUTH_HASH = '40be5210bf797491fbe3ed910580eb5ef9da7ff1e0dec54234b0c53e49b626a2'; // SHA-256 de SalesClub2026
+async function _checkAuth() {
+  const pwd = document.getElementById('auth-input').value;
+  if (!pwd) return;
+  const enc = new TextEncoder().encode(pwd);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  if (hash === AUTH_HASH) {
+    sessionStorage.setItem('elite_auth', '1');
+    document.getElementById('auth-overlay').style.display = 'none';
+  } else {
+    document.getElementById('auth-error').textContent = 'Senha incorreta. Tente novamente.';
+    document.getElementById('auth-input').value = '';
+    document.getElementById('auth-input').focus();
+  }
+}
+document.addEventListener('DOMContentLoaded', function() {
+  var btn = document.getElementById('auth-btn');
+  var inp = document.getElementById('auth-input');
+  if (btn) btn.addEventListener('click', _checkAuth);
+  if (inp) {
+    inp.addEventListener('keypress', function(e) { if (e.key === 'Enter') _checkAuth(); });
+    if (sessionStorage.getItem('elite_auth') !== '1') inp.focus();
+  }
+});
+// ==============================
+// DATA: CLIENTES
+// ==============================
+const clients = [
+  {
+    id: "3409", nome: "VIVER É VERDE", apelido: "Viver é Verde / Scopo Inovação",
+    sponsor: "Kellen Farezin Gozdzink", champion: "Fábio Paschoal",
+    status: "estavel", ultimaAtualizacao: "2026-04-27",
+    resumo: "Elite antigo. Mencionado como candidato a renovação. Pedro em negociações.",
+    historico: [
+      { data: "2026-04-27", texto: "Pedro menciona negociação de renovação com Enel, 3S, Big Green e Viver é Verde." }
+    ],
+    acoes: []
+  },
+  {
+    id: "5511", nome: "MAVE", apelido: "MAVE",
+    sponsor: "Tiago Ferla", champion: "Fernando Ferla",
+    status: "satisfeito", ultimaAtualizacao: "2026-04-06",
+    resumo: "Bateu recorde histórico de vendas em março/2026. Candidato a case de sucesso e painel na Sales Strategy.",
+    historico: [
+      { data: "2026-04-06", texto: "MAV bateu recorde histórico de vendas em março de 2026. Incluído no teste de marketing intelligence. Negociação para painel na Sales Strategy 51." }
+    ],
+    acoes: []
+  },
+  {
+    id: "16926", nome: "ACTION 360", apelido: "Action 360",
+    sponsor: "Marccelo Tuccio", champion: "Paula Baldini",
+    status: "critico", ultimaAtualizacao: "2026-06-15",
+    resumo: "🚨 Segue para cancelamento, sem notícias novas. Têm máquina e Pedro ainda tenta desenrolar, mas o andamento está fraco.",
+    historico: [
+      { data: "2026-06-15", texto: "Segue para cancelar; sem notícias novas no comitê. Ainda têm máquina e Pedro tentando reverter, mas andamento bem fraco." },
+      { data: "2026-03-31", texto: "Pendente agendamento próxima sessão Sales Board com Feldens. Paula viajando para Alemanha de 7 a 21/04. Duas mentorias em abril previstas. Paula participará de podcast em 22/04 e painel no Elite Experience 06/05." },
+      { data: "2026-04-06", texto: "Onboard com Denis foi um sucesso. Próxima reunião em abril para manter ritmo." },
+      { data: "2026-04-27", texto: "Pedro assumiu responsabilidade pelo acompanhamento. Próximo encontro adiado por viagem para Nova York." },
+      { data: "2026-05-20", texto: "Alta satisfação. Paula homenageada como empreendedora de destaque. Equipe irá agendar mentorias individuais e alinhar próximos passos com mentores." },
+      { data: "2026-06-08", texto: "Risco de cancelamento identificado. Pedro planeja reunião presencial com Paula para entender as causas do cancelamento e tentar manter o interesse no Action Summit, mesmo diante de possíveis dificuldades financeiras do cliente." }
+    ],
+    acoes: [
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Agendar reunião presencial com Paula para tentar reverter cancelamento da Action 360" }
+    ]
+  },
+  {
+    id: "17826", nome: "MAESTRIA", apelido: "Maestria Consórcios",
+    sponsor: "Cleber Gomes", champion: "Márcio Müller",
+    status: "estavel", ultimaAtualizacao: "2026-06-15",
+    resumo: "Confirmou presença na imersão de 16/06.",
+    historico: [
+      { data: "2026-06-15", texto: "Andrea confirmou que a Maestria virá à imersão de amanhã." }
+    ], acoes: []
+  },
+  {
+    id: "20430", nome: "LAB220", apelido: "Lab 220",
+    sponsor: "Tatiana Stahl Idelsohn", champion: "Henry Idelsohn",
+    status: "atencao", ultimaAtualizacao: "2026-06-08",
+    resumo: "Precisa de abordagem direta para renovação, separando a parceria da utilização da máquina. Tati satisfeita mas negociação de renovação requer atenção.",
+    historico: [
+      { data: "2026-04-06", texto: "Incluído na lista de pontos de atualização assíncrona solicitada pelo Pedro." },
+      { data: "2026-05-28", texto: "Tati (sponsor) demonstra satisfação com o programa. Vendas de R$170k no mês anterior com vendedores atingindo metas — dado usado como argumento para migração para plano pago." },
+      { data: "2026-06-08", texto: "Precisa de abordagem direta para renovação, separando a parceria comercial da utilização da máquina. Pedro entrará em contato para tratar da renovação." }
+    ],
+    acoes: [
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Entrar em contato com LAB220 para tratar renovação, separando parceria da máquina" }
+    ]
+  },
+  {
+    id: "25133", nome: "ANTARES", apelido: "Antares / Silcar Gráfica",
+    sponsor: "Teresa Edite Soares de Macedo", champion: "Domingos Gomes de Souza Junior",
+    status: "atencao", ultimaAtualizacao: "2026-05-20",
+    resumo: "Situação revertida após reunião. Érica dobrou conversão com auditoria de leads. Contrato estendido por 2 meses. Silcar Gráfica em negociação de renovação.",
+    historico: [
+      { data: "2026-03-31", texto: "Contrato venceu naquela semana, foco em renovação. Cliente 'bipolar', dificuldade de comunicação. Avançou no onboarding." },
+      { data: "2026-04-06", texto: "Pedro terá reunião com Domingos para fechar renovação Elite Black (sinalizada 3 vezes). Matheus avalia ganhos incrementais. Implementaram pouco do modelo de gestão sugerido. Incêndio no barracão gerou pausa de 7 meses." },
+      { data: "2026-04-13", texto: "Classificada como crítica. Teresa (NPS 0) e Érica deram feedback negativo sobre qualidade do trabalho e troca frequente de pessoas. Estratégia: Pedro + Matheus participam de reunião com proprietários para apresentar lado do Sales Club." },
+      { data: "2026-04-20", texto: "Nunca engajou, sem reuniões acontecendo. Domingos planejava renovação com outra empresa." },
+      { data: "2026-04-27", texto: "Situação começou a ser contornada após reunião de sexta. Prazo de finalização das entregas da MV: 45 dias a 2 meses. Diagnóstico Elite para Silcar previsto." },
+      { data: "2026-05-15", texto: "Extensão contratual por 2 meses. Pedro buscará insumos para visitar Silcar Gráfica em Teresina." },
+      { data: "2026-05-20", texto: "Érica conduziu auditoria de leads que dobrou a conversão. Três reuniões realizadas. Postura participativa melhorou. Reunião de validação agendada com Lucas." },
+      { data: "2026-05-28", texto: "Teresa (sponsor) avaliando escolha de CRM: Pipe Run ou RD Station. RD Station mais barato, mas Pipe tem maior potencial em Inbound Marketing. Lucas será responsável pela configuração caso escolham o Pipe." },
+      { data: "2026-06-08", texto: "Teresa demonstrou insatisfação. Cliente precisará de atenção via modelo Elite Advisor." }
+    ],
+    acoes: [
+      { responsavel: "Matheus Santos Diniz", acao: "Enviar resumo escrito dos resultados da Antares para compilar na jornada" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Buscar insumos para visita à Silcar Gráfica" }
+    ]
+  },
+  {
+    id: "26535", nome: "NEVONI", apelido: "Nevone / Nevoni",
+    sponsor: "Victor Carbone", champion: "Valter Calamita",
+    status: "estavel", ultimaAtualizacao: "2026-06-15",
+    resumo: "Fluindo bem após a troca de consultor; cliente engajado e ativo na máquina.",
+    historico: [
+      { data: "2026-06-15", texto: "Fluindo bem; tinham trocado de consultor e o atendimento seguiu bem. Engajaram bem e seguem ativos na máquina." },
+      { data: "2026-04-06", texto: "Incluído na lista de pontos de atualização assíncrona solicitada pelo Pedro." }
+    ],
+    acoes: []
+  },
+  {
+    id: "26735", nome: "XRM", apelido: "XRM Pré-moldados",
+    sponsor: "Brenno Rebouças Moitinho", champion: "Fernanda Moitinho",
+    status: "estavel", ultimaAtualizacao: "2026-06-15",
+    resumo: "Reativado via Breno/Brendão (já fez 2 reuniões) e comercial reorganizado com apoio da Sales Club. Ainda pouco engajado nos Sales Boards (foco em mentorias/imersões). Mantido estável.",
+    historico: [
+      { data: "2026-06-15", texto: "Não estava entrando em reuniões; Matheus acionou o Brendão (Breno) e já fizeram 2 reuniões. Breno reorganizou o comercial com ajuda da Sales Club. Segue pouco engajado nos Sales Boards (faz muita mentoria/imersão). Gabriel manteve como estável." },
+      { data: "2026-04-06", texto: "Incluído na lista de pontos de atualização assíncrona solicitada pelo Pedro." },
+      { data: "2026-06-08", texto: "Dificuldades de engajamento: Brenão tem faltado às reuniões da máquina. Cliente confirmou presença na próxima quarta-feira e pretende visitar o escritório no final de junho." }
+    ],
+    acoes: [
+      { responsavel: "Matheus Santos Diniz", acao: "Enviar para Pedro resumo do status da operação da XRM" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Entrar em contato com Breno da XRM para exigir progresso na implementação da máquina" }
+    ]
+  },
+  {
+    id: "26935", nome: "DEDEKA", apelido: "Dedeka / Dedeca",
+    sponsor: "Débora Cambruzzi da Rosa", champion: "Alisson Silva",
+    status: "satisfeito", ultimaAtualizacao: "2026-06-15",
+    resumo: "Cliente estável; presencial tranquilo, sem pontos de atenção.",
+    historico: [
+      { data: "2026-06-15", texto: "Tratada como estável; presencial tranquilo." },
+      { data: "2026-03-31", texto: "Visita de Thiago a Caxias com Jéssica foi positiva. Cliente fluindo bem." },
+      { data: "2026-04-06", texto: "Provavelmente migrará para o Evolution. Considerado caso de sucesso. Pedro planeja gravar podcast e comprar bôres para dar de presente a filhos de clientes Elite." }
+    ],
+    acoes: []
+  },
+  {
+    id: "27836", nome: "JARAGUÁ", apelido: "Jaraguá",
+    sponsor: "Fabio Queiroz Martins", champion: "Marcelo Martins",
+    status: "satisfeito", ultimaAtualizacao: "2026-06-08",
+    resumo: "✅ Fábio altamente satisfeito. Já demonstra interesse em formatar terceiro ano de contrato e discute realização de evento do Sales Clubes em sua região.",
+    historico: [
+      { data: "2026-04-06", texto: "CRM implementado — optaram por CRM específico do agronegócio, mais barato e fácil do que Salesforce. Reuniões de acompanhamento ocorrendo. Uso do Sales Pro alto. Participação do Fábio na Leadership acompanhada." },
+      { data: "2026-06-08", texto: "Fábio altamente satisfeito. Já demonstra interesse em formatar o terceiro ano de contrato e está discutindo a realização de um evento do Sales Clubes em sua região." }
+    ],
+    acoes: []
+  },
+  {
+    id: "28437", nome: "ANJOS COLCHOES", apelido: "Anjos Colchões",
+    sponsor: "Keith Drage Silvestri", champion: "Arison Paulo",
+    status: "sem_registro", ultimaAtualizacao: "—",
+    resumo: "Mencionado na lista para atualização assíncrona em 06/04.",
+    historico: [
+      { data: "2026-04-06", texto: "Incluído na lista de pontos de atualização assíncrona solicitada pelo Pedro." }
+    ],
+    acoes: []
+  },
+  {
+    id: "28938", nome: "BEGREEN", apelido: "BeGreen / Big Green",
+    sponsor: "Kauê Brunetti Angeli", champion: "Vinicius Matheus",
+    status: "critico", ultimaAtualizacao: "2026-05-28",
+    resumo: "Renovação considerada improvável por problemas de caixa. Oferta de R$5.000 feita mas não respondida pelo cliente.",
+    historico: [
+      { data: "2026-04-27", texto: "Possibilidade de permuta de projetos por um Elite Black." },
+      { data: "2026-05-20", texto: "Contrato com entregas pausadas. Pedro apresentou nova proposta de escopo reduzido para tentar manter o cliente." },
+      { data: "2026-05-28", texto: "Renovação considerada improvável devido a problemas de caixa. Oferta de R$5.000 feita e não respondida pelo cliente." },
+      { data: "2026-06-08", texto: "Pedro trabalhando para aproximar Cauê visando estruturar Sales Evolution (ano 2). Obstáculo: questões contratuais com fornecedor externo Rafael Matos precisam ser superadas antes." }
+    ],
+    acoes: []
+  },
+  {
+    id: "29138", nome: "FORZA", apelido: "Forza",
+    sponsor: "Fernanda Schuch", champion: "Eduardo Schuch",
+    status: "atencao", ultimaAtualizacao: "2026-06-15",
+    resumo: "Possibilidade de estar devendo — Pedro vai validar com a Fernanda se o pagamento será feito. Matheus (com o Thiagão) vai levantar os detalhes e encaminhar.",
+    historico: [
+      { data: "2026-06-15", texto: "Mencionada a possibilidade de estar devendo; Pedro vai validar com a Fernanda se vai pagar. Matheus (com o Thiagão) também vai levantar os detalhes e encaminhar o status." },
+      { data: "2026-04-06", texto: "Incluído na lista de pontos de atualização assíncrona solicitada pelo Pedro." }
+    ],
+    acoes: [
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Validar com a Fernanda a pendência financeira da Forza (se vai pagar)" },
+      { responsavel: "Matheus Santos Diniz", acao: "Levantar detalhes da Forza (com Thiagão) e encaminhar status" },
+    ]
+  },
+  {
+    id: "29238", nome: "MAUER", apelido: "Mauer",
+    sponsor: "Guilherme Hartl", champion: "Thalles Beatrici",
+    status: "critico", ultimaAtualizacao: "2026-05-20",
+    resumo: "Processo de fusão para contornar problemas financeiros. Inadimplente, conversão de leads baixíssima (IA SDR 0,01%). Guilherme evitando contato.",
+    historico: [
+      { data: "2026-03-31", texto: "Inadimplente, não pagou renegociação, não assinou aditivo. Atingiu metas de fev/mar. Estratégia: usar metas como argumento de cobrança. Pedro enviou mensagem mais dura cobrando assinatura do aditivo." },
+      { data: "2026-04-06", texto: "Deve chamar Pedro para renegociar. Conversão baixa por uso de chatbot. Plano: melhorar qualificação e processo de venda." },
+      { data: "2026-04-13", texto: "Crítico. Guilherme insistindo em ferramenta de IA para SDR com conversão de 0,01%. Resistindo ao direcionamento da consultoria. Não deve ser priorizado para renovação pois está se tornando concorrente." },
+      { data: "2026-04-20", texto: "Reuniões normais, cenário melhorou, mas conversão de leads permanece baixa. Inadimplente mas sem reclamações do serviço." },
+      { data: "2026-04-27", texto: "Contato com Guilherme sem sucesso. Matheus deve investigar situação atual incluindo recuperação, vendas e dificuldades com SDRA." },
+      { data: "2026-05-15", texto: "Processo de fusão para contornar problemas financeiros. Pedro mantém cobranças sobre pagamentos." },
+      { data: "2026-05-20", texto: "Fusão em andamento. Dificuldades de comunicação com Guilherme. Dificuldades financeiras e operacionais persistem." },
+      { data: "2026-05-28", texto: "Cliente alega não ter utilizado o serviço desde dezembro para evitar renovação. Pedro refutou: máquina disponível e funcional por 4 meses. Matheus compilando dossiê com registro de 75% de uso contratual para negociar dispensa de multa mediante pagamento de valores atrasados." }
+    ],
+    acoes: [
+      { responsavel: "Matheus Santos Diniz", acao: "Elaborar dossiê detalhado de uso (75% contratual) e histórico de reuniões para negociar valores atrasados" }
+    ]
+  },
+  {
+    id: "29439", nome: "BOGO ADVOCACIA", apelido: "Bogo Advocacia",
+    sponsor: "Israel Bogo", champion: "Alana Banach",
+    status: "estavel", ultimaAtualizacao: "2026-06-15",
+    resumo: "✅ Renovou. Relação estável.",
+    historico: [
+      { data: "2026-06-15", texto: "Bogo (BOGO) renovou, conforme confirmado no comitê." },
+      { data: "2026-04-27", texto: "Os três envolvidos virão para o Strategy, com potencial para Elite Black." },
+      { data: "2026-06-08", texto: "Israel (Cascavel, Toledo) identificado como embaixador potencial para futuros eventos na região. Repasse mensal previsto com feedbacks firmes sobre pontos de melhoria e travas internas da equipe." }
+    ],
+    acoes: [
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Contatar Israel para propor participação como embaixador no evento da região de Cascavel e Toledo" },
+      { responsavel: "Matheus Santos Diniz", acao: "Realizar repasse mensal com Israel apresentando pontos de melhoria e travas internas da equipe" }
+    ]
+  },
+  {
+    id: "29539", nome: "GRUPO FORTE", apelido: "Grupo Forte",
+    sponsor: "Elcimone de Oliveira Bianchini", champion: "Elcimone de Oliveira Bianchini",
+    status: "estavel", ultimaAtualizacao: "2026-06-15",
+    resumo: "Segue tranquilo. Contrataram empresa externa para implementar o Bitrix (que estava com problemas) e a Sales Club está ajudando além do escopo.",
+    historico: [
+      { data: "2026-06-15", texto: "Segue tranquilo. Contrataram uma empresa para implementar o Bitrix, que estava dando muito problema; time da Sales Club ajudando mais do que o previsto." },
+      { data: "2026-04-27", texto: "Grupo Forte (Simone e Mais) solicitou liberação para 12 pessoas no Strategy. Gabriel enviou link de inscrição para Angélica da Grupo Forte." }
+    ],
+    acoes: []
+  },
+  {
+    id: "29739", nome: "ENELE", apelido: "Enele / NL",
+    sponsor: "Nivaldo Luiz Lazaron Junior", champion: "Otávio",
+    status: "estavel", ultimaAtualizacao: "2026-06-15",
+    resumo: "✅ Renovou. Transição de consultor em andamento — Jéssica será apresentada como nova consultora.",
+    historico: [
+      { data: "2026-06-15", texto: "Enele (NL) renovou. A transição de consultor foi concluída e Matheus vai apresentar a Jéssica como nova consultora." },
+      { data: "2026-04-27", texto: "Pedro aguardando retorno sobre renovação até quarta-feira, com expectativa de renovação para Elite Black." },
+      { data: "2026-05-20", texto: "NL renovou o contrato. Equipe fará transição da modalidade Machine para Evolution com Jéssica." }
+    ],
+    acoes: [
+      { responsavel: "Matheus Santos Diniz", acao: "Verificar data de transição da NL e mapear mudança para o sistema Evolution" }
+    ]
+  },
+  {
+    id: "30039", nome: "HOT SAT", apelido: "HotSat",
+    sponsor: "Raiane Couto Albuquerque", champion: "Ramon Albuquerque",
+    status: "critico", ultimaAtualizacao: "2026-06-15",
+    resumo: "🚨 Indicação de que não devem renovar. Raiane sinalizou pausa e a última tentativa de contato ficou com o Pedro. Projeto interno (placa solar no escritório) citado como possível gancho, mas andamento fraco.",
+    historico: [
+      { data: "2026-06-15", texto: "Segue com indicação de não renovar; Raiane sinalizou pausa e a última tentativa de contato ficou com o Pedro. Há um projeto interno deles (instalação de placa solar no escritório) citado como possível gancho de renovação, mas o andamento está fraco." },
+      { data: "2026-03-31", texto: "Estável. Foco em liderança com Marcelo. Meta de fev abaixo (70%). Trabalho em andamento para reduzir dependência de representantes." },
+      { data: "2026-04-06", texto: "Planejando visita roadshow a clientes em Teresina. Luiz visitaria HotSat, Antares e Silcar." },
+      { data: "2026-04-13", texto: "Pedro criou grupo de WhatsApp conectando clientes de Teresina (Domingues, Teresa, Ferronte, Raiane) com mentor Laçand para palestra." },
+      { data: "2026-04-20", texto: "Hotsat sinalizou que não renovaria. Pedro em negociação para encontro presencial visando renovação." },
+      { data: "2026-04-27", texto: "Evento em Teresina 21/22 maio para apresentar o Sales Club. Case de sucesso solicitado para dia 11-12/05. Raiane pode conectar com presidente do CIEP (leads)." },
+      { data: "2026-05-15", texto: "Evento realizado em Teresina. Matheus fornecerá cases de sucesso." },
+      { data: "2026-05-20", texto: "Pedro realizou reunião com Talison, Matheus e Jorge para tratar renovação. Raiane agora quer apoio dos gerentes." },
+      { data: "2026-05-28", texto: "Talison cogitou pausar as atividades para implementar melhorias internas. Pedro argumentou fortemente contra a pausa, alertando que a empresa perderia inércia e foco operacional. Talison comprometeu-se a discutir com Raiane antes de decidir." },
+      { data: "2026-06-08", texto: "Contato com Raiane continua difícil. Jorge sinalizou uma pausa. Equipe planeja última tentativa de contato direto com Ryane para formalizar o status da renovação." }
+    ],
+    acoes: [
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Telefonar para Ryane para formalizar o status da renovação da Hotsat" }
+    ]
+  },
+  {
+    id: "30240", nome: "SACKETT", apelido: "Sackett / Sacket",
+    sponsor: "Cláudia Contreras", champion: "Luiz Fernando Martins",
+    status: "estavel", ultimaAtualizacao: "2026-06-08",
+    resumo: "Prestes a assinar contrato Elite Platinum — sem máquina, modelo Elite Advisor (antigo Sales Board). Pedro e Gabriel definirão com Feldens a seleção de mentor para acompanhamento individualizado.",
+    historico: [
+      { data: "2026-03-31", texto: "Cláudia verbalizou intenção de renovar e continuar com Sales Evolution. Foco em desenvolvimento como CEO. Classificada como 'satisfeita'. Máquina 'rampando'. Pedro planeja fechar renovação presencialmente em 15/05." },
+      { data: "2026-04-06", texto: "Cláudia deve renovar pela satisfação com o trabalho. Solicitou visita presencial de Pedro + Thiago e Sales Board individual mensal (a avaliar custo). Buscando contratar gestor comercial e finalizar CRM." },
+      { data: "2026-04-27", texto: "Cláudia dará retorno sobre renovação amanhã ou quarta. Expectativa de renovação para Elite Black." },
+      { data: "2026-05-20", texto: "Melhorias na operação da máquina. Pedro tratará renovação na próxima segunda propondo escopo focado em mentoria e Sales Board, adaptado à disponibilidade da gestão." },
+      { data: "2026-05-28", texto: "Dificuldades na renovação por fluxo de caixa da cliente. Discutida possibilidade de reduzir escopo para educação + comunidade (em vez do formato Success Evolution atual) para evitar cancelamento. Cláudia quer retornar ao escopo completo quando situação financeira melhorar." },
+      { data: "2026-06-08", texto: "Prestes a assinar contrato Elite Platinum — sem máquina, modelo Elite Advisor (antigo Sales Board). Pedro e Gabriel alinharão com Feldens a seleção de mentor para acompanhar entrega individualizada." }
+    ],
+    acoes: [
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Definir com Feldens a metodologia e seleção de mentor para entrega do Elite Advisor à Sackett" }
+    ]
+  },
+  {
+    id: "30340", nome: "BAITZ", apelido: "Baitz / Bites / Bytes / Clodoaldo",
+    sponsor: "Clodoaldo Baitz", champion: "Edson Reis",
+    status: "atencao", ultimaAtualizacao: "2026-06-15",
+    resumo: "Em renovação: Pedro marcou reunião na quinta com Tati e Henry para iniciar; questão de permuta em aberto — Pedro vai buscar contrapartida financeira. Contato direto via Thiago.",
+    historico: [
+      { data: "2026-06-15", texto: "Em processo de renovação — Pedro marcou reunião na quinta com Tati e Henry. Questão de permuta em aberto; Pedro vai puxar para garantir contrapartida financeira. Contato direto via Thiago (time de Ops)." },
+      { data: "2026-04-06", texto: "Conversão baixa por uso de chatbot. Plano de melhoria no processo de qualificação e venda. R$120k em crédito com Bites em serviços de tecnologia (permuta)." },
+      { data: "2026-04-13", texto: "12 dias para concluir recuperação judicial." },
+      { data: "2026-04-27", texto: "Pedro solicitou relatório de status para reunião de renovação. Clodoaldo satisfeito com o trabalho." },
+      { data: "2026-05-15", texto: "Clodoaldo satisfeito mas Edson é detrator, questiona velocidade. Pedro e time planejarão suporte na estratégia de evento de maio." },
+      { data: "2026-05-20", texto: "Em processo de negociação para renovação. Pedro realizou mentorias com time de marketing e vendas." },
+      { data: "2026-05-28", texto: "Deve fornecer resposta de renovação em meados de junho." },
+      { data: "2026-06-08", texto: "Renovação ainda aguardando definição até meados do mês. Pedro fará abordagem direta." }
+    ],
+    acoes: [
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Conduzir reunião de renovação (quinta) com Tati e Henry e buscar contrapartida financeira além da permuta" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Entrar em contato com AB 220 (Baitz) para tratar da renovação do contrato" }
+    ]
+  },
+  {
+    id: "30841", nome: "HAGNOS", apelido: "Hagnos / Agnos / Agnus",
+    sponsor: "Jorge Leandro Medeiros", champion: "Rafael Wilson",
+    status: "estavel", ultimaAtualizacao: "2026-06-15",
+    resumo: "✅ Renovou. Relação estabilizada após período de atenção.",
+    historico: [
+      { data: "2026-06-15", texto: "Cliente (Hagnos) renovou; sem pontos adicionais a complementar no momento." },
+      { data: "2026-05-28", texto: "Avaliação de renovação em andamento. Matheus sugeriu utilizar a alta do petróleo — que impacta negativamente o negócio do cliente — como argumento de venda para a importância de treinamento e desenvolvimento contínuo da equipe de vendas." },
+      { data: "2026-06-08", texto: "Análise do contrato: pagamento escalonado mas prazo de 18 meses exige cumprimento total. Máquina ativa com entrega da segunda versão do playbook. Equipe planeja abordagem focada na saída da Gisele e explora projeto interno de drones de limpeza como possível novo ponto de valor." }
+    ],
+    acoes: [
+      { responsavel: "Matheus Santos Diniz", acao: "Usar argumento da alta do petróleo na conversa de renovação com Hagnos" },
+      { responsavel: "Matheus Santos Diniz", acao: "Agendar reunião com cliente para discutir saída da Gisele e alinhar expectativas" }
+    ]
+  },
+  {
+    id: "30941", nome: "CAMPOAR", apelido: "Campoar",
+    sponsor: "Mikael Santos", champion: "Fernando Hardt",
+    status: "atencao", ultimaAtualizacao: "2026-06-08",
+    resumo: "Risco de não renovar. Pedro reportou cautela e dificuldades de contato com Fernando. Empresa cresce em vendas de drones mas cliente ainda não se comprometeu com renovação.",
+    historico: [
+      { data: "2026-04-20", texto: "Cliente pediu para esperar 3 semanas para coletar dados de VSL. Metas batidas em fevereiro e março. Reunião de Giovana e Gisele com Fernando para abordar dados do Alan." },
+      { data: "2026-05-28", texto: "Conta sem reuniões nas últimas duas semanas — coincide com período de renovação (Campo A). Pedro reuniu com Fernando no dia anterior e agendou reunião para 08/06 para apresentar proposta formal. Pedro conectou Fernando com Fábio (Jaraguá) como referência positiva. Cliente cauteloso, não se comprometeu. Possível contato adicional via Gisele para sondar disposição de renovação." },
+      { data: "2026-06-08", texto: "Pedro reportou cautela quanto à renovação. Dificuldades em contato com Fernando. A empresa reconhece a necessidade do apoio dos clubes dado o crescimento nas vendas de drones, mas o cliente ainda não se comprometeu." }
+    ],
+    acoes: [
+      { responsavel: "Matheus Santos Diniz", acao: "Contatar Fernando via grupo ou mensagem direta para investigar ausência e sondar renovação" }
+    ]
+  },
+  {
+    id: "31242", nome: "VIRTUS", apelido: "Virtus",
+    sponsor: "Luana de Oliveira Chaves", champion: "Rafael Custódio",
+    status: "saindo", ultimaAtualizacao: "2026-06-08",
+    resumo: "Offboarding confirmado. Empresa em recuperação judicial e grave situação financeira. Acessos sendo removidos.",
+    historico: [
+      { data: "2026-03-31", texto: "Em recuperação judicial. CRM não implementado, dados manuais. Ganhos incrementais apesar dos problemas. Contrato repactuado e renovado." },
+      { data: "2026-04-06", texto: "Gargalo na implementação do CRM. Rafael solicitou auxílio com Conta Azul. Perguntou sobre vagas de imersão e pediu modelo de contrato para social media." },
+      { data: "2026-04-13", texto: "Avançando na implementação de ERP integrado ao RD. Equipe rodando mais. Pedro irá contatar Rafael e Luana para incentivo em educação e comunidade." },
+      { data: "2026-04-20", texto: "Evoluindo, não está mais crítico! Máquina de vendas basicamente implantada. Tem equipe e CRM. Lucas de Sales Ops forneceu suporte significativo." },
+      { data: "2026-04-27", texto: "Rafael retornou da China. Aniversário de Rafael — mensagem enviada. Pedro verificará status da RJ." },
+      { data: "2026-05-15", texto: "Decisões voláteis do gestor e rotatividade de funcionários. Pedro verificará status dos pagamentos para validar renovação por mais 12 meses." },
+      { data: "2026-05-20", texto: "Virtus comunicou encerramento do contrato (RJ). Pedro tentará agenda com Rafael para avaliar viabilidade de escopo reduzido." },
+      { data: "2026-05-28", texto: "Cancelamento confirmado. Empresa em dificuldades financeiras realizando corte de custos. Cliente faltou às reuniões agendadas com Pedro e Rafael, reforçando decisão de não persistir na renovação. Matheus responsável por passar situação para Camila hoje e comunicar encerramento formal na segunda-feira." },
+      { data: "2026-06-08", texto: "Status confirmado como offboarding (concluído). Situação financeira grave e processo de recuperação judicial impedem renovação. Decisão de remover acessos do cliente." }
+    ],
+    acoes: []
+  },
+  {
+    id: "31342", nome: "PRISMA", apelido: "Prisma Promotora",
+    sponsor: "Douglas Freire Navarrette", champion: "Gisele Lemes",
+    status: "saindo", ultimaAtualizacao: "2026-06-08",
+    resumo: "Contrato termina em 02/06/2026 e não será renovado. Saída de Francisco e Grayson. Queda drástica nos resultados após mudança de concessionária e região.",
+    historico: [
+      { data: "2026-03-31", texto: "Desafios: B2C → B2B outbound. Renovação esperada para próximo trimestre (vencimento 02/06). Francisco (braço direito do Douglas) como chave para renovação. Douglas valoriza a comunidade." },
+      { data: "2026-04-06", texto: "Francisco mais ativo desde o plano de ação, tirando dúvidas sobre playbook. Queda acentuada nos resultados por mudança de concessionária e estado. Crucial checar ganhos incrementais para conversa com Douglas." },
+      { data: "2026-04-13", texto: "Francisco irá à Leadership como influenciador positivo no processo de renovação." },
+      { data: "2026-04-20", texto: "Francisco saindo em 15 dias (informação obtida por Gisele). Mudança abrupta de concessionária (decisão de Douglas) reduziu faturamento pela metade. Máquina funcionando mas equipe júnior não consegue prospecção B2B." },
+      { data: "2026-04-27", texto: "Saída de Francisco confirmada. Matheus enviará e-mail formal para Gisele/Douglas sobre novo ponto focal." },
+      { data: "2026-05-20", texto: "Contrato termina 02/06. Não será renovado. Saída de Francisco e Grayson. Pedro tentou reverter sem sucesso." },
+      { data: "2026-06-08", texto: "Status confirmado como offboarding (concluído) junto com Virtus. Grave situação financeira e recuperação judicial impedem renovação. Remoção de acessos sendo executada." }
+    ],
+    acoes: []
+  },
+  {
+    id: "31644", nome: "MEDACADEMY", apelido: "Media Academy",
+    sponsor: "André Renato Moura Barroso", champion: "Albervan Cidrônio",
+    status: "critico", ultimaAtualizacao: "2026-06-15",
+    resumo: "🚨 Albervan saiu do grupo e quase todo o time foi demitido, restando o Thiago. Sem sinal de renovação e contrato perto de acabar, apesar do faturamento acima do ano anterior.",
+    historico: [
+      { data: "2026-06-15", texto: "Albervan saiu do grupo e demitiram quase todo o time, restando basicamente o Thiago. Sem sinal de renovação e contrato perto de vencer, mesmo com faturamento acima do ano anterior. Matheus tentando contato com André para entender a reestruturação, sem retorno." },
+      { data: "2026-03-31", texto: "Máquina travada por mudanças de equipe. Processo de vendas não sendo implementado. André planeja enviar Beatriz e Gisele/Gislane para Leadership. André quer vir para evento 51." },
+      { data: "2026-04-06", texto: "Permanece 'travada/andando devagar'. Confirmado uso da Leadership com duas pessoas não sócias. André e Ianca provavelmente na Strategy." },
+      { data: "2026-04-13", texto: "Status crítico mantido. Pouca execução na máquina. Pedro enviará relatório com dados para tentar engajar a liderança." },
+      { data: "2026-04-20", texto: "Travada por falta de avanço interno do cliente. Suspeita de sobrecarga de tarefas internas. Decidido documentar atraso para resguardar responsabilidade." },
+      { data: "2026-04-27", texto: "Duas gestoras participaram do Leadership (uma de Marketing, uma de Vendas). Progresso lento. André e Alber Van considerando Strategy mas muito ocupados." },
+      { data: "2026-05-15", texto: "Enfrenta problemas de falta de tempo e rotatividade. Gestor Thiago participando pouco." },
+      { data: "2026-05-20", texto: "Sem mudanças. Gestor operando sem equipe de suporte, dependendo do próprio tempo para executar ações." },
+      { data: "2026-05-28", texto: "Após período de inatividade, cliente retornou. Contrataram nova pessoa que está em integração. Equipe realizará exercícios de role play para apoiar desenvolvimento da nova contratada." },
+      { data: "2026-06-08", texto: "Contrato vence em 31/07/2026. Empresa passou por demissões em massa recentemente. Consultora Rejane deve buscar reunião direta com dono André para entender a continuidade do negócio." }
+    ],
+    acoes: [
+      { responsavel: "Rejane", acao: "Agendar reunião direta com André (dono) para entender continuidade do negócio da Media Academy" }
+    ]
+  },
+  {
+    id: "31745", nome: "TECGESTOR", apelido: "TecGestor / Tech Gestor",
+    sponsor: "Mauricio Rufato Carpi", champion: "Diego Carpi",
+    status: "estavel", ultimaAtualizacao: "2026-06-15",
+    resumo: "Estável. Tudo entregue e na fase de acompanhamento. Nova colaboradora performando bem. Playbook sendo rodado.",
+    historico: [
+      { data: "2026-06-15", texto: "Mencionado como tranquilo, sem pontos de atenção." },
+      { data: "2026-04-06", texto: "CRM próximo de ser finalizado. Operação iniciou com nova funcionária após período de inatividade e risco de cancelamento. Maurício comparecerá à Leadership." },
+      { data: "2026-04-20", texto: "Fluindo bem, tudo entregue, na fase de acompanhamento. Nova colaboradora performando bem. Playbook sendo rodado, apenas pequenos ajustes necessários." },
+      { data: "2026-05-20", texto: "Estável, apesar de enfrentar desafios comuns de contratação de mão de obra." },
+      { data: "2026-05-28", texto: "Finalizando onboarding e começando a construir o playbook com rotinas de gestão." }
+    ],
+    acoes: []
+  },
+  {
+    id: "31845", nome: "JC DECOR", apelido: "JC Decor / JCDC",
+    sponsor: "Giovanni Sanches", champion: "Giovanni Sanches",
+    status: "estavel", ultimaAtualizacao: "2026-06-15",
+    resumo: "Tiveram mentoria recente com o Feldens e o retorno foi muito positivo. Ainda com dificuldade de implementação, mas mais participativos e presentes. Felipe, Vinícius e Tiago na imersão de 16/06.",
+    historico: [
+      { data: "2026-06-15", texto: "Tiveram mentoria recentemente com o Feldens e gostaram bastante. Seguem com dificuldade de implementação, porém mais participativos e presentes. Felipe, Vinícius e Tiago (este participa pouco) estarão na imersão de amanhã." },
+      { data: "2026-04-06", texto: "Felipe (coordenador) enviará para Leadership Felipe e Vinícius. Equipe estava centralizando tarefas mas trazendo equipe novamente para formações de gestão. JC Decor fechou negócio com a Renko Produções." },
+      { data: "2026-04-13", texto: "Felipe e JC Decor não compareceram ao Leadership." },
+      { data: "2026-04-20", texto: "Felipe resistindo ao CRM Pipe Run, desenvolvendo CRM interno. Projeto estagnado. Estratégia: Matheus lista pendências, equipe cobra. Possível reunião conjunta com Giovani e Felipe para mostrar estagnação." },
+      { data: "2026-05-28", texto: "Sinais de risco: baixa participação nas reuniões e não aplicação interna das estratégias. Felipão (Gestor) trava as ações apesar de receptivo pessoalmente. Decisão: Pedro se aproximará de Giovani (proprietário) e Thiago realizará reunião presencial com Felipe para entender desafios e direcionar ações da máquina." }
+    ],
+    acoes: [
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Aproximar-se de Giovani (sócio/proprietário) para destravar progresso da consultoria" },
+      { responsavel: "Matheus Santos Diniz", acao: "Alinhar com Thiago reunião presencial com Felipe do JCDC" }
+    ]
+  },
+  {
+    id: "31945", nome: "NORTON NUNES", apelido: "Norton Nunes",
+    sponsor: "Ana Cláudia A. Nunes Rocha", champion: "Gabriel Fernandes",
+    status: "atencao", ultimaAtualizacao: "2026-06-15",
+    resumo: "Querem mentoria com Raphael Lassance — não têm time nem investimento em marketing, demandando orientação mais estratégica e básica (estruturação da área, ABM; mercado saturado de ~400 empresas). Gabriel ficou responsável pela ponte. Champion Gabriel volta de férias em 21/06.",
+    historico: [
+      { data: "2026-06-15", texto: "Cliente quer marcar mentoria com Raphael Lassance: sem time e sem investimento em marketing, precisa de orientação para estruturar a área (perfil mais ABM/prospecção; mercado saturado de ~400 empresas). Gabriel ficou responsável por fazer a ponte com o Rapha. Champion Gabriel (Norton) retorna de férias em 21/06." },
+      { data: "2026-04-06", texto: "Marina e Norton Nunes com presença confirmada na imersão." },
+      { data: "2026-05-15", texto: "Clientes sinalizaram falta de acompanhamento próximo após saída de Rafa. Pedro reconheceu alta carga operacional e discussão interna sobre contratação de gestor de comunidades." },
+      { data: "2026-05-20", texto: "Gabriel (Norton) com comportamento crítico e ameaçador, monitorado pelo grupo. Pedro estabeleceu contato direto com Ana para mitigar riscos. Progresso lento na máquina por modelo de gestão adotado." },
+      { data: "2026-05-28", texto: "Migração para estratégia Account Based Sales (ABS) focada em relacionamento, dado o limite restrito de 400 empresas prospectáveis no Brasil. Retornos de dados ocorrendo quinzenalmente para análise prática." }
+    ],
+    acoes: [
+      { responsavel: "Gabriel Sueth", acao: "Fazer a ponte com Raphael Lassance para a mentoria estratégica da Norton Nunes" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Manter contato próximo com Ana da Norton para garantir bom relacionamento" },
+      { responsavel: "Matheus Santos Diniz", acao: "Garantir cadência quinzenal de análise de dados na estratégia ABS" }
+    ]
+  },
+  {
+    id: "32046", nome: "BRINKER", apelido: "Brinker",
+    sponsor: "Sabrina Paese Brinker Dias", champion: "Marcelo Dias",
+    status: "sem_registro", ultimaAtualizacao: "—",
+    resumo: "Sem registros nas reuniões do Comitê. Listado como Elite Black.",
+    historico: [], acoes: []
+  },
+  {
+    id: "32146", nome: "ORLA", apelido: "Orla Incorporadora",
+    sponsor: "Richard Andre de Sá", champion: "Vlad Giordani",
+    status: "saindo", ultimaAtualizacao: "2026-06-15",
+    resumo: "❌ Cancelamento solicitado pelo jurídico do cliente, após faltar às últimas três agendas; tentativas com Richard e Vlad sem retorno. Conta dada como saída.",
+    historico: [
+      { data: "2026-06-15", texto: "Jurídico do cliente enviou mensagem (quinta/sexta) solicitando o cancelamento, após o cliente faltar às últimas três agendas e não responder. Pedro tentou contato com Vlad e Richard sem sucesso. Conta dada como saída." },
+      { data: "2026-03-31", texto: "Gerente Mário (problemático) saiu. Situação melhorou imediatamente. Equipe marcou reunião para Sales Talent." },
+      { data: "2026-05-20", texto: "Fraco desempenho de vendas por dependência de corretores externos e falta de time comercial interno estruturado. Camila continuará reuniões de gestão com Vlad. Pedro buscará trazer Richard para Strategy em julho." },
+      { data: "2026-05-28", texto: "Problema crítico identificado: implementação travada há meses por falta de equipe interna de vendas. Suspeita de conflito de interesses — Vlad (diretor) pode estar priorizando vendas diretas pelas quais recebe comissões (~6%), o que o desestimula a estruturar a célula interna. Problema escalado para Thiago e Hélio. Classificado como risco alto. Pedro enviará mensagem ao Richard para verificar necessidade de ajuste de rota." },
+      { data: "2026-06-08", texto: "Orla enfrenta desafios de contratação de equipe interna de vendas. Matheus buscará com Jéssica a criação de um modelo de vendas interno para contornar a morosidade atual." }
+    ],
+    acoes: [
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Enviar mensagem ao Richard para verificar se ele precisa ajustar a rota com a consultoria" },
+      { responsavel: "Matheus Santos Diniz", acao: "Reunir com Jéssica para alinhar criação de modelo de vendas interno na Orla" }
+    ]
+  },
+  {
+    id: "32247", nome: "MAKE DISTRIBUIDORA", apelido: "Make Distribuidora / Júlio",
+    sponsor: "Julio Cesar Antonio Carvalho", champion: "Julio Carvalho",
+    status: "critico", ultimaAtualizacao: "2026-06-08",
+    resumo: "Distrato confirmado em 20/05, mas Luiz buscará tentativa de reversão com o cliente. Pedro alinhará estratégia de reversão.",
+    historico: [
+      { data: "2026-04-06", texto: "Make quase paralisada — cliente não quer rodar a máquina enquanto não resolver questão do agente de IA. Reunião com Feldens agendada para o dia seguinte." },
+      { data: "2026-04-13", texto: "Quase paralisada. Cliente não quer rodar máquina enquanto não resolver IA. Reunião com Feldens, Giovana e Thiago para validar modelo." },
+      { data: "2026-04-20", texto: "Projeto travado — expectativa de Júlio era de ajuda na construção de agentes de vendas (fora do escopo). Caso de permuta com Feldens." },
+      { data: "2026-05-20", texto: "Distrato confirmado. Expectativas não foram atingidas. Feldens validou os requisitos mas as expectativas desenhadas não foram alcançadas." },
+      { data: "2026-06-08", texto: "Luiz buscará tentativa de reversão com o cliente. Pedro definirá estratégia de reversão junto com Luiz." }
+    ],
+    acoes: [
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Alinhar com Luiz estratégia de reversão para cliente Make" }
+    ]
+  },
+  {
+    id: "32345", nome: "TA DECOR", apelido: "T Deco / TA Decor",
+    sponsor: "Luiz Guilherme Tristao de Lima", champion: "Rafael Ortobelli",
+    status: "atencao", ultimaAtualizacao: "2026-06-08",
+    resumo: "Reescopo do contrato Elite: início da máquina adiado para novembro de 2026. Sessões de mentoria e ativação da universidade como entregas intermediárias. Visita produtiva realizada.",
+    historico: [
+      { data: "2026-04-06", texto: "Único pendente de onboarding (contrato de 18 meses fechado em setembro). Follow-up com Paulo para agendar processo presencial em Americana." },
+      { data: "2026-05-20", texto: "Solicitou pausa dos serviços — cliente pagou o programa por meses sem utilizar a máquina por mudanças internas. Equipe buscará reverter na reunião de terça-feira tentando outras modalidades de entrega." },
+      { data: "2026-06-08", texto: "Reescopo do contrato Elite aprovado após visita produtiva: início da máquina adiado para novembro de 2026 (implementação requer 6 meses). Entregas intermediárias: sessões de mentoria e ativação da universidade. Pedro corrigirá base de dados com data correta de encerramento e ajustará escopo em conjunto com Luiz." }
+    ],
+    acoes: [
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Corrigir data de encerramento do contrato da TA Decor na base de dados" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Reescopar Elite Decor: ajustar escopo em conjunto com Luiz" }
+    ]
+  },
+  {
+    id: "32449", nome: "LS DO BRASIL", apelido: "LS do Brasil / Damian",
+    sponsor: "Damian Funes", champion: "Damian Funes",
+    status: "critico", ultimaAtualizacao: "2026-06-15",
+    resumo: "🚨 Situação ruim, com baixo engajamento de Damian, e sem máquina de vendas contratada. Conta sem andamento, mantida como crítica.",
+    historico: [
+      { data: "2026-06-15", texto: "Apontada como conta em situação ruim, com baixo engajamento de Damian, e sem máquina de vendas contratada. Sem evolução." },
+      { data: "2026-04-06", texto: "Feldens sugerirá Sales Board bimestral para gerenciar custos e acomodar agenda do Damian." },
+      { data: "2026-04-27", texto: "Preocupação com Damião sumido. Pedro planeja enviar um board. Gabriel confirmou que Damian terá 6 sessões de Sales Board." },
+      { data: "2026-05-15", texto: "Após ausência, Damian solicitou ajuda urgente após demitir gerente. Plano de reativar engajamento." },
+      { data: "2026-05-20", texto: "Plano detalhado: 6 Sales Board + mentorias individuais com Thiago, Hélio e Cléber. Material será enviado por correio para Maringá." },
+      { data: "2026-06-08", texto: "Damian colocado em alerta crítico por falta de participação e comunicação." }
+    ],
+    acoes: [
+      { responsavel: "Gabriel Sueth", acao: "Agendar mentorias individuais do Damian com Hélio, Cléber e Thiago" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Enviar brinde para o filho do Damian no endereço de Maringá" }
+    ]
+  },
+  {
+    id: "32549", nome: "WIZARD CARAPICUIBA", apelido: "Wizard Carapicuíba / Vitor",
+    sponsor: "Victor Hissao Matsuda Inoue", champion: "Victor Hissao",
+    status: "critico", ultimaAtualizacao: "2026-06-08",
+    resumo: "🔴 Classificado como crítico: falta de engajamento e uso quase nulo dos entregáveis. Gabriel analisará dados de uso e engajamento na plataforma.",
+    historico: [
+      { data: "2026-05-20", texto: "Segue participando das mentorias. Será convidado para próxima imersão Leadership para aumentar engajamento." },
+      { data: "2026-06-08", texto: "Classificado como crítico devido à falta de engajamento e uso quase nulo dos entregáveis. Gabriel analisará dados de uso na plataforma." }
+    ],
+    acoes: [
+      { responsavel: "Gabriel Sueth", acao: "Analisar dados de uso e engajamento da Wizard Carapicuíba na plataforma" }
+    ]
+  },
+  {
+    id: "32649", nome: "QUEIROZ", apelido: "Queiroz Participações",
+    sponsor: "Cesar Augusto de Queiroz Costa", champion: "Cesar Queiroz",
+    status: "estavel", ultimaAtualizacao: "2026-06-15",
+    resumo: "Elite Gold. Queiroz confirmado para imersão 51. Estratégia: convidar para imersões de Leadership e Strategy.",
+    historico: [
+      { data: "2026-06-15", texto: "Mencionado rapidamente: não tem máquina ativa no momento." },
+      { data: "2026-04-06", texto: "Elite Gold. Queiroz estará na imersão 51. Estratégia: buscar engajamento convidando para imersões." }
+    ],
+    acoes: []
+  },
+  {
+    id: "32749", nome: "WIZARD MARINA VILARINHO", apelido: "Wizard Marina Vilarinho",
+    sponsor: "Marina Lauretti Vilarinho", champion: "Alex Oliveira",
+    status: "critico", ultimaAtualizacao: "2026-06-08",
+    resumo: "🔴 Alerta crítico: falta de participação e comunicação (Baixada Santista). Situação similar à Wizard Carapicuíba.",
+    historico: [
+      { data: "2026-04-06", texto: "Marina e Rodolfo irão ao evento SGSW. Presença confirmada na próxima imersão." },
+      { data: "2026-06-08", texto: "Colocado sob alerta crítico por falta de participação e comunicação (identificado como Wizard da Baixada Santista na ata)." }
+    ],
+    acoes: []
+  },
+  {
+    id: "32849", nome: "OMOTEBAKO", apelido: "Omotebako / Patrícia Bianco",
+    sponsor: "Patrícia Ferreira Bianco", champion: "Karin Marques",
+    status: "estavel", ultimaAtualizacao: "2026-06-15",
+    resumo: "Tranquilo e de boa. Patrícia segue bem engajada.",
+    historico: [
+      { data: "2026-06-15", texto: "Tranquilo/de boa. Patrícia segue bem engajada." },
+      { data: "2026-03-31", texto: "Patrícia é cliente de perfil 'acelerado / 220'. Foco em desacelerá-la e atender demanda por mentoria de marketing. Potencial para podcast e case de sucesso. Marido Tadash é chef famoso (restaurante Canoe)." },
+      { data: "2026-04-06", texto: "Tranquilo. Patrícia diminuindo ansiedade, seguindo processo da máquina. Alerta: alta demanda por marketing/infoproduto (B2C histórico desafiador). Sugestão de mentoria com Bárbara." },
+      { data: "2026-04-20", texto: "Gabriel agendou mentoria com Laance (Karin). Alta expectativa em marketing, equipe educando para vendas." }
+    ],
+    acoes: []
+  },
+  {
+    id: "32950", nome: "RALLF", apelido: "Ralf Advogados / Rallf",
+    sponsor: "Walter Gomes Ferreira Junior", champion: "Walter Junior",
+    status: "estavel", ultimaAtualizacao: "2026-04-06",
+    resumo: "Elite Gold. Walter vem primeiro para Strategy e depois trará o sócio.",
+    historico: [
+      { data: "2026-04-06", texto: "Elite Gold. Walter planeja comparecer à próxima Strategy. Depois trará o sócio." }
+    ],
+    acoes: []
+  },
+  {
+    id: "33050", nome: "NEOORTHO", apelido: "Neoortho",
+    sponsor: "Ana Paula Munhoz", champion: "Ana Paula Munhoz",
+    status: "sem_registro", ultimaAtualizacao: "—",
+    resumo: "Sem registros nas reuniões do Comitê.",
+    historico: [], acoes: []
+  }
+];
+
+// ==============================
+// DATA: REUNIÕES
+// ==============================
+// Clientes mencionados sem conciliação definida
+const indefinidos = [
+  { reuniao: "28/05/2026", trecho: "3S — Lucas será mentor no Elite Experience de julho, visando reaproximação. Cliente não encontrado na base ativa." },
+  { reuniao: "08/06/2026", trecho: "Plena Pay — Onboarding realizado por Pedro. Cliente animada mas ainda definindo internamente qual vertical de negócio (banking ou inteligência tributária) será o foco da implementação. Não encontrado na base ativa de clientes." },
+  { reuniao: "15/06/2026", trecho: "'Melhor da Minha' — menção vaga e sem contexto suficiente na transcrição para conciliar com um cliente da base ativa." }
+];
+
+const meetings = [
+  {
+    data: "2026-06-15", dataFmt: "15/06/2026",
+    resumo: "Revisão de saúde da carteira Elite com foco em risco de renovação (Pedro ausente). Orla teve cancelamento solicitado pelo jurídico e segue como saída; Action, LS do Brasil, Medacademy e Hot Sat seguem críticos. Renovações de Hagnos, Bogo e Enele; Baitz inicia renovação. Norton Nunes pede mentoria com Raphael Lassance. Alinhamentos para a imersão de 16/06.",
+    clientesMencionados: ["ACTION 360","ORLA","LS DO BRASIL","HOT SAT","HAGNOS","GRUPO FORTE","DEDEKA","NEVONI","BOGO ADVOCACIA","MEDACADEMY","NORTON NUNES","JC DECOR","XRM","BAITZ","OMOTEBAKO","QUEIROZ","TECGESTOR","MAESTRIA","FORZA","ENELE"],
+    destaques: [
+      "Críticos / saída: Orla teve cancelamento solicitado pelo jurídico (após faltar às últimas três agendas; Richard e Vlad sem retorno) e foi dada como saída. Action 360 segue para cancelar, sem notícias novas. LS do Brasil em situação ruim, com baixo engajamento de Damian e sem máquina de vendas. Hot Sat com indicação de não renovar (Raiane sinalizou pausa; última tentativa com Pedro; projeto de placa solar citado como possível gancho).",
+      "Renovações: Hagnos e Bogo (BOGO) renovaram. Enele (NL) renovou, com transição de consultor — Jéssica será a nova consultora. Baitz (Bytes) iniciando renovação: Pedro marcou reunião na quinta com Tati e Henry; permuta em aberto, Pedro vai buscar contrapartida financeira.",
+      "Estáveis: Grupo Forte tranquilo (Sales Club ajudando na implementação do Bitrix além do escopo); Dedeka, Tecgestor e Omotebako (Patrícia) de boa; Nevoni fluindo após troca de consultor; XRM reativado via Breno/Brendão (já fez 2 reuniões, comercial reorganizado), mantido estável.",
+      "Medacademy (Média Academy): Albervan saiu do grupo e quase todo o time foi demitido, restando o Thiago. Sem sinal de renovação e contrato perto de acabar, apesar do faturamento acima do ano anterior. Matheus tenta contato com André para entender a reestruturação.",
+      "Norton Nunes: querem mentoria com Raphael Lassance — sem time e sem investimento em marketing, demanda mais estratégica (estruturação da área, ABM; mercado saturado de ~400 empresas). Gabriel ficou responsável pela ponte; champion Gabriel volta de férias em 21/06.",
+      "JC Decor: mentoria recente com o Feldens foi muito bem; ainda com dificuldade de implementação, mas mais participativos. Felipe, Vinícius e Tiago na imersão de amanhã.",
+      "Forza: mencionada possibilidade de estar devendo — Pedro vai validar com a Fernanda se o pagamento será feito; Matheus (com Thiagão) vai levantar os detalhes.",
+      "Processo: Gabriel apresentou a visão consolidada dos comitês (este painel) e a lista de nomes alternativos para detecção; Matheus quer replicar o modelo para as reuniões com as consultoras.",
+      "Imersão 16/06: atividade presencial amanhã, Matheus participa como aluno (Andrea passará a lista de presentes para facilitar a abordagem). Sexta é aniversário do Otávio (enviar 'bolinho digital'). Andrea alertou sobre trânsito pesado na região do escritório por obras."
+    ],
+    acoes: [
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Seguir com os contatos mais críticos (contas em risco de cancelamento)" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Validar com a Fernanda a pendência financeira da Forza" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Conduzir a reunião de renovação da Baitz (quinta, com Tati e Henry) e buscar contrapartida financeira" },
+      { responsavel: "Matheus Santos Diniz", acao: "Levantar detalhes de contas pendentes (ex.: Forza, com Thiagão) e puxar o André (Medacademy) para entender a reestruturação" },
+      { responsavel: "Gabriel Sueth", acao: "Fazer a ponte com Raphael Lassance para a mentoria da Norton Nunes" },
+      { responsavel: "Andrea Hirata", acao: "Avisar a equipe sobre aniversários de clientes e passar a Matheus a lista de presentes na imersão" }
+    ]
+  },
+  {
+    data: "2026-06-08", dataFmt: "08/06/2026",
+    resumo: "Análise de riscos de churn, reescopo da TA Decor, offboarding de Virtus e Prisma. Sackett assina Elite Platinum Advisor. Action 360 em risco de cancelamento. Wizards e Damian em alerta crítico.",
+    clientesMencionados: ["ACTION 360","TA DECOR","VIRTUS","PRISMA","HAGNOS","CAMPOAR","SACKETT","BAITZ","LAB220","HOT SAT","BEGREEN","XRM","WIZARD CARAPICUIBA","WIZARD MARINA VILARINHO","LS DO BRASIL","MEDACADEMY","ANTARES","JARAGUÁ","ORLA","MAKE DISTRIBUIDORA","BOGO ADVOCACIA"],
+    destaques: [
+      "Make + Action: Riscos de churn atualizados — Luiz tentará reversão com Make; Pedro planeja reunião presencial com Paula (Action) para entender cancelamento e manter interesse no Action Summit.",
+      "TA Decor (Gestão de Risco de Churn – Decor): Reescopo acordado após visita produtiva — início da máquina adiado para novembro/2026. Entregas intermediárias: mentoria e universidade.",
+      "Virtus + Prisma: Offboarding confirmado para ambos — graves situações financeiras e recuperação judicial. Remoção de acessos.",
+      "Hagnos (Agnus): Contrato 18 meses exige cumprimento total. Máquina ativa, 2ª versão do playbook entregue. Abordagem sobre saída da Gisele e drones de limpeza como novo ponto de valor.",
+      "Campoar: Risco de não renovar. Pedro com dificuldades de contato com Fernando, apesar do crescimento em vendas de drones.",
+      "Sackett: 🎉 Prestes a assinar Elite Platinum — modelo Advisor (sem máquina). Pedro + Gabriel definirão mentor com Feldens.",
+      "Baitz + LAB220 + Hotsat: Baitz aguarda definição até meados do mês. LAB220 precisa de abordagem direta separando parceria da máquina. Hotsat: contato com Raiane difícil, Jorge sinalizou pausa — última tentativa.",
+      "BeGreen: Esforço para estruturar Sales Evolution (ano 2) superando obstáculos contratuais com Rafael Matos.",
+      "XRM (Brenão): Engajamento baixo, faltou às reuniões. Confirmou presença para próxima quarta e visita ao escritório no fim de junho.",
+      "Wizard Carapicuíba + Wizard Baixada Santista + Damian (LS): Todos em alerta crítico por falta de engajamento, participação e comunicação.",
+      "Media Academy: Contrato vence 31/07. Demissões em massa recentes. Rejane buscará reunião com André para entender continuidade.",
+      "Antares (Teresa): Insatisfação — precisará de atenção via Elite Advisor.",
+      "Jaraguá (Fábio): ✅ Altamente satisfeito. Discutindo 3º ano de contrato e evento do Sales Clubes na região.",
+      "Plena Pay: Onboarding realizado. Cliente animada mas ainda definindo vertical (banking vs. inteligência tributária).",
+      "Israel (Cascavel): Identificado como embaixador potencial para eventos na região de Cascavel e Toledo."
+    ],
+    acoes: [
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Alinhar com Luiz estratégia de reversão para Make" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Agendar reunião presencial com Paula para tentar reverter cancelamento da Action" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Corrigir base de dados com data correta de encerramento do contrato da TA Decor" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Reescopar Elite Decor: ajustar escopo em conjunto com Luiz" },
+      { responsavel: "Matheus Santos Diniz", acao: "Agendar reunião com Hagnos para discutir saída da Gisele e alinhar expectativas" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Telefonar para Ryane (Hotsat) para formalizar status da renovação" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Definir com Feldens mentor para entrega do Elite Advisor à Sackett" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Entrar em contato com LAB220 para tratar renovação separando parceria da máquina" },
+      { responsavel: "Gabriel Sueth", acao: "Analisar dados de uso e engajamento da Wizard Carapicuíba na plataforma" },
+      { responsavel: "Matheus Santos Diniz", acao: "Enviar para Pedro resumo do status da operação da XRM" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Contatar Breno da XRM para exigir progresso na implementação" },
+      { responsavel: "Matheus Santos Diniz", acao: "Reunir com Jéssica para criar modelo de vendas interno para a Orla" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Contatar Israel para propor participação como embaixador em Cascavel/Toledo" }
+    ]
+  },
+  {
+    data: "2026-05-28", dataFmt: "28/05/2026",
+    resumo: "Revisão de contratos com foco em retenção e renovação. Cancelamento da Virtus confirmado. Mauer em negociação de multa. Sackett com dificuldades de caixa. Orla com conflito de interesses identificado.",
+    clientesMencionados: ["CAMPOAR","SACKETT","ANTARES","MEDACADEMY","VIRTUS","MAUER","MAKE DISTRIBUIDORA","JC DECOR","HOT SAT","BAITZ","BEGREEN","LAB220","ORLA","TECGESTOR","NORTON NUNES"],
+    destaques: [
+      "Campoar (Campo A): Conta sem reuniões há 2 semanas. Pedro reuniu com Fernando e agendou proposta formal para 08/06.",
+      "Sackett: Dificuldades de renovação por fluxo de caixa. Possível redução de escopo para educação + comunidade.",
+      "Antares (Teresa): Avaliando CRM Pipe Run vs RD Station. Lucas configurará se escolherem o Pipe.",
+      "Media Academy: Retornou após inatividade. Nova pessoa em integração. Role play de apoio.",
+      "Virtus: Cancelamento confirmado. Cliente faltou às reuniões. Matheus comunicará encerramento formal.",
+      "Mauer: Cliente alega não usar desde dezembro. Pedro refutou com 75% de uso. Dossiê sendo preparado para negociar multa.",
+      "JCDC: Sinais de risco. Felipão trava ações. Pedro se aproximará de Giovani. Thiago fará reunião presencial com Felipe.",
+      "Hotsat: Talison cogitou pausar. Pedro argumentou contra. Talison discutirá com Raiane.",
+      "BeGreen: Renovação improvável. Oferta de R$5.000 não respondida.",
+      "Orla: 🚨 Conflito de interesses identificado — Vlad possivelmente priorizando comissões diretas (~6%). Problema escalado para Thiago e Hélio.",
+      "Lab220: Tati satisfeita. Vendas de R$170k com metas atingidas → argumento para migração para plano pago.",
+      "Norton Nunes: Migração para estratégia Account Based Sales (ABS). Retornos quinzenais."
+    ],
+    acoes: [
+      { responsavel: "Matheus Santos Diniz", acao: "Contatar Fernando (Campoar) para investigar ausência nas reuniões" },
+      { responsavel: "Matheus Santos Diniz", acao: "Passar Virtus para Camila hoje e comunicar encerramento formal na segunda" },
+      { responsavel: "Matheus Santos Diniz", acao: "Elaborar dossiê de uso do Mauer (75% contratual) para negociar valores atrasados" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Aproximar-se de Giovani do JCDC para destravar consultoria" },
+      { responsavel: "Matheus Santos Diniz", acao: "Alinhar com Thiago reunião presencial com Felipe do JCDC" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Enviar mensagem ao Richard (Orla) para verificar ajuste de rota" },
+      { responsavel: "Matheus Santos Diniz", acao: "Expor situação de comissão e papel do Vlad ao Thiago (Orla)" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Discutir com Hélio hipótese de conflito de interesses na Orla" }
+    ]
+  },
+  {
+    data: "2026-05-20", dataFmt: "20/05/2026",
+    resumo: "Reunião de gestão de contas: resultados operacionais e estratégias de renovação. Antares dobrou conversão. Prisma e Make em distrato. NL renovou.",
+    clientesMencionados: ["ANTARES","TA DECOR","LS DO BRASIL","ORLA","MEDACADEMY","PRISMA","VIRTUS","AGNOS","TAX GROUP","MAUER","BEGREEN","MAKE DISTRIBUIDORA","ACTION 360","BAITZ","SACKETT","ENELE","TECGESTOR","WIZARD CARAPICUIBA","NORTON NUNES","HOT SAT","DEDEKA","MAVE","JARAGUÁ","GRUPO FORTE","OMOTEBAKO","CAMPOAR"],
+    destaques: [
+      "Antares: Érica dobrou a conversão com auditoria de leads. Postura participativa melhorou.",
+      "TA Decor: Solicitou pausa — Pedro tentará reverter na terça-feira.",
+      "Prisma: Contrato termina 02/06, não renova. Saída de Francisco e Grayson.",
+      "Virtus: Comunicou encerramento. Pedro tenta escopo reduzido.",
+      "Make: Distrato confirmado após expectativas de IA não alcançadas.",
+      "Action 360: Alta satisfação. Paula homenageada como empreendedora.",
+      "NL/Enele: Renovou! Transição para Evolution com Jéssica.",
+      "Sackett: Renovação sendo negociada na próxima segunda.",
+      "Mauer: Em processo de fusão, dificuldades financeiras persistem.",
+      "BeGreen: Entregas pausadas, nova proposta de escopo reduzido apresentada."
+    ],
+    acoes: [
+      { responsavel: "Matheus Santos Diniz", acao: "Enviar resumo escrito sobre resultados da Antares" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Tentar reverter pausa da T Deco na reunião de terça" },
+      { responsavel: "Gabriel Sueth", acao: "Agendar mentorias do Damian (Hélio, Cléber, Thiago)" },
+      { responsavel: "Gabriel Sueth", acao: "Simular capacidade de ocupação de agenda dos mentores" },
+      { responsavel: "Andrea Hirata", acao: "Contatar Vlad para possibilidade de trazer ele e Richard para Strategy de julho" },
+      { responsavel: "Matheus Santos Diniz", acao: "Elaborar relatório por escrito dos resultados da Agnos" },
+      { responsavel: "Matheus Santos Diniz", acao: "Enviar relatório sobre a Sackett para visão estratégica de renovação" },
+      { responsavel: "Matheus Santos Diniz", acao: "Verificar data de transição da NL para Evolution" },
+      { responsavel: "O grupo", acao: "Convidar Power Drones para Leadership de junho e Strategy de julho" },
+      { responsavel: "O grupo", acao: "Convidar Vitor da Wizard Carapicuíba para Leadership" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Enviar brinde para filho do Damian em Maringá" }
+    ]
+  },
+  {
+    data: "2026-05-15", dataFmt: "15/05/2026",
+    resumo: "Métricas de entregáveis Elite (meta: 60% das 40 empresas em pelo menos 1 entregável/mês). Status de contas críticas. Planejamento do evento Teresina.",
+    clientesMencionados: ["ANTARES","MAUER","BAITZ","VIRTUS","MEDACADEMY","TAX GROUP","MAKE DISTRIBUIDORA","NORTON NUNES","LS DO BRASIL","HOT SAT"],
+    destaques: [
+      "Meta definida: 60% das 40 empresas devem participar de ao menos 1 entregável por mês.",
+      "Decore/Virtus: Considerando pausa por fluxo de caixa. Reunião com Pedro, Thiago e Matheus planejada.",
+      "Mauer: Em fusão para contornar problemas financeiros.",
+      "Baitz: Clodoaldo satisfeito mas Edson é detrator. Apoio em evento de maio.",
+      "Norton: Falta de acompanhamento após saída de Rafa. Gabriel com comportamento ameaçador.",
+      "Hotsat: Evento Teresina planejado para 21-22 mai. Casos de sucesso necessários.",
+      "LS: Solicitou ajuda urgente após demitir gerente."
+    ],
+    acoes: [
+      { responsavel: "Matheus Santos Diniz", acao: "Enviar indicador semanal de participação nos entregáveis da máquina" },
+      { responsavel: "Pedro + Thiago + Matheus", acao: "Realizar reunião com Rafael (Virtus/Decore) sobre continuidade" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Apoiar Clodoaldo na estruturação do evento de maio da Bites" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Confirmar data de fim da extensão contratual da Antares" },
+      { responsavel: "Thiago Bezerra", acao: "Criar materiais/estratégias para eventos em Teresina e Rio de Janeiro" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Acompanhar Ton sobre diagnóstico para renovação da Hotsat" }
+    ]
+  },
+  {
+    data: "2026-04-27", dataFmt: "27/04/2026",
+    resumo: "Estratégia de engajamento e renovação de clientes. Lançamento de plataforma de inteligência de mercado mensal.",
+    clientesMencionados: ["MEDACADEMY","VIRTUS","HOT SAT","PRISMA","MAUER","ANTARES","ACTION 360","BAITZ","SACKETT","BEGREEN","MAKE DISTRIBUIDORA","LS DO BRASIL"],
+    destaques: [
+      "Media Academy: Pedro pressiona André e Alber Van para confirmarem presença no Strategy.",
+      "Plataforma de inteligência: Pedro apresentou nova plataforma com relatórios mensais competitivos. Cadastro dos clientes até quarta.",
+      "Cludoald Whites (Baitz): 60 dias sem custo enquanto permuta é decidida. Reunião de renovação agendada.",
+      "Antares: Situação contornada. Entregáveis em 45 dias. Diagnóstico Elite para Silcar previsto.",
+      "Hotsat: Case para 11-12/05. Visita a Teresina. Raiane pode conectar com presidente do CIEP.",
+      "Bacan: Encerrou atividades. Último contato com Gilson para formalizar encerramento.",
+      "Rafael Virtus: Aniversário, retornou da China."
+    ],
+    acoes: [
+      { responsavel: "Andrea Hirata", acao: "Pressionar André e Alber Van para participarem do Strategy" },
+      { responsavel: "Matheus Santos Diniz", acao: "Solicitar relatório de status de Clodoaldo via Thiago" },
+      { responsavel: "Matheus Santos Diniz", acao: "Investigar situação atual da Mauer (recuperação, metas, vendas, SDRA)" },
+      { responsavel: "Matheus Santos Diniz", acao: "Enviar e-mail formal para Gisele/Douglas sobre saída de Francisco (Prisma)" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Finalizar upload dos clientes na plataforma de inteligência até quarta" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Construir plano de comunicação e marketing para plataforma de inteligência" },
+      { responsavel: "Matheus + Gisele", acao: "Montar base do case HotSat para evento (prazo: dia 11 ou 12)" }
+    ]
+  },
+  {
+    data: "2026-04-20", dataFmt: "20/04/2026",
+    resumo: "Saída de Francisco da Prisma. Foco em clientes críticos. Documentação de pendências como estratégia de resguardo.",
+    clientesMencionados: ["PRISMA","ANTARES","MAUER","VIRTUS","MEDACADEMY","JC DECOR","BAITZ","OMOTEBAKO"],
+    destaques: [
+      "Prisma: Francisco sairá em 15 dias. Reunião de contexto com novo contato só após entrada.",
+      "Virtus: Evoluindo, não está mais crítico! Máquina basicamente implantada, CRM em funcionamento.",
+      "Mauer: Reuniões normais, cenário melhorou mas conversão baixa. Inadimplente.",
+      "Media Academy: Travada por falta de avanço interno. Estratégia de documentar atraso para resguardar responsabilidade.",
+      "JCDC: Felipe resistindo ao CRM Pipe Run, desenvolvendo CRM interno. Reunião conjunta com Giovani planejada.",
+      "Antares: Sem reuniões acontecendo."
+    ],
+    acoes: [
+      { responsavel: "Gabriel Sueth", acao: "Cobrar Regiane e time sobre pendências da Media Academy" },
+      { responsavel: "Matheus Santos Diniz", acao: "Criar lista de pendências do JCDC e agendar reunião com Felipe e Giovani" },
+      { responsavel: "Andrea Hirata", acao: "Consultar Regiane sobre estratégia de documentação da Media Academy" },
+      { responsavel: "Gabriel Sueth", acao: "Agendar mentoria com Laance (Virtus)" }
+    ]
+  },
+  {
+    data: "2026-04-13", dataFmt: "13/04/2026",
+    resumo: "Implementação do Bitrix para documentação interna. Definição do novo Health Score (60% das empresas em ao menos 1 entregável/mês). Estratégia para clientes críticos.",
+    clientesMencionados: ["MEDACADEMY","VIRTUS","BAITZ","MAUER","ANTARES"],
+    destaques: [
+      "Novo Health Score: equação com peso para máquina de vendas + educação/comunidade + pulso da equipe.",
+      "Bitrix: implementação para documentação interna detalhada (temperatura, último passo, próximo passo, tarefas fora do escopo).",
+      "KPI criado: 60% das empresas com ao menos 1 reunião de entregável por mês.",
+      "Media Academy: Status crítico mantido. Duas lideranças para Leadership/Strategy.",
+      "Antares: NPS 0 de Teresa. Pedro + Matheus participarão de reunião com proprietários para apresentar lado do Sales Club.",
+      "Mauer: Ferramenta de IA com 0,01% de conversão. Cliente 'cabeça dura' resistindo ao direcionamento.",
+      "NPS atual: 61 (campanha). Avaliação máquina: 8.4. Comunidade Elite: 8.3."
+    ],
+    acoes: [
+      { responsavel: "Matheus Santos Diniz", acao: "Reportar engajamento semanal dos clientes Elite Black na Máquina (toda sexta)" },
+      { responsavel: "O grupo", acao: "Definir critérios de engajamento para entregáveis do Elite esta semana" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Contatar Rafael (Virtus) para agendas de educação/comunidade" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Agendar reunião de renovação com Domingos (Silcar/Antares) esta semana" },
+      { responsavel: "Gabriel Sueth", acao: "Levantar histórico de utilização da Antares/Silcar em serviços Elite até amanhã" }
+    ]
+  },
+  {
+    data: "2026-04-06", dataFmt: "06/04/2026",
+    resumo: "Revisão da lista de clientes Elite Black. Ajuste de status da Make. Onboarding da T Decor pendente. Estratégia para clientes Gold. Health Score e renovações.",
+    clientesMencionados: ["MAKE DISTRIBUIDORA","TA DECOR","RALLF","QUEIROZ","MEDACADEMY","VIRTUS","PRISMA","ANTARES","BAITZ","MAUER","SACKETT","TECGESTOR","MAVE","JARAGUÁ","DEDEKA","JC DECOR","OMOTEBAKO","WIZARD CARAPICUIBA","WIZARD MARINA VILARINHO"],
+    destaques: [
+      "Make: Status alterado para 'contratual ativo'. Reunião com Feldens para validar modelo de IA.",
+      "T Decor: Único pendente de onboarding. Follow-up com Paulo Terra para agendar presencial em Americana.",
+      "MAV: Recorde histórico de vendas em março. Incluído no teste de marketing intelligence.",
+      "Dedeka: Provavelmente migrará para o Evolution. Caso de sucesso confirmado.",
+      "Health Score: Próxima evolução — correlacionar resultados da máquina + engajamento na jornada + participação em entregáveis educacionais.",
+      "Jaraguá: CRM implementado. Sales Pro alto. Fábio na Leadership.",
+      "TecGestor: CRM próximo de finalizar. Nova funcionária performando bem.",
+      "Sackett: Cláudia deve renovar. Proposta de Sales Board individual mensal a avaliar."
+    ],
+    acoes: [
+      { responsavel: "Andrea Hirata", acao: "Alterar status da Make para contratual ativo" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Follow-up com Paulo Terra e CEO sobre onboarding presencial da T Decor em Americana" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Incluir Media Academy no teste MVP da plataforma de marketing intelligence" },
+      { responsavel: "Matheus Santos Diniz", acao: "Solicitar relatório da Bites ao Thiago" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Ligar para Guilherme (Mauer) para entender proposta de renegociação" },
+      { responsavel: "Gabriel Sueth", acao: "Atualizar notas do CRM sobre agendamento da reunião com HotSat" }
+    ]
+  },
+  {
+    data: "2026-03-31", dataFmt: "31/03/2026",
+    resumo: "Primeira reunião registrada. Revisão geral da carteira com foco em clientes críticos, renovações e estratégias de engajamento para próximos eventos.",
+    clientesMencionados: ["MEDACADEMY","VIRTUS","PRISMA","SACKETT","ANTARES","BAITZ","HOT SAT","MAUER","ACTION 360","DEDEKA","OMOTEBAKO","MAKE DISTRIBUIDORA"],
+    destaques: [
+      "Media Academy: Crítico por operacional. André enviará 2 pessoas para Leadership.",
+      "Virtus: Crítico por RJ e CRM não implementado. Contrato repactuado.",
+      "Prisma: Transição B2C → B2B. Francisco confirmado para imersão. Renovação em junho.",
+      "Sackett: Classificada como 'satisfeita'. Máquina rampando. CEO verbalizou renovação.",
+      "Condolivre: Cancelou contrato. Status alterado para cancelado.",
+      "Mauer: Inadimplente, metas atingidas fev/mar. Pedro enviou mensagem cobrando aditivo.",
+      "HotSat: Estável. Foco em liderança com Marcelo.",
+      "Tax Group: Não renovará — proprietário se tornou concorrente no RS."
+    ],
+    acoes: [
+      { responsavel: "Gabriel Sueth", acao: "Planejar ativações para reativar clientes da Media Academy" },
+      { responsavel: "Matheus Santos Diniz", acao: "Confirmar status/saída de Albervan com Regiane" },
+      { responsavel: "Gabriel Sueth", acao: "Assumir contato WhatsApp da Virtus da Amanda e criar planos para eventos" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Contatar Domingos (Antares) sobre renovação do contrato" },
+      { responsavel: "Andrea Hirata", acao: "Reforçar convite de Leadership para Thales e Guilherme (Mauer)" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Marcar onboarding do Elite Novo (terceiro ano) com Clebão" },
+      { responsavel: "Pedro Garcia Ribeiro", acao: "Priorizar agendamento da próxima sessão Sales Board da Action com Feldens" }
+    ]
+  }
+];
+
+// ==============================
+// RENDERING
+// ==============================
+let currentFilter = 'todos';
+let currentSearch = '';
+
+function getBadgeClass(status) {
+  const map = { satisfeito:'badge-satisfeito', estavel:'badge-estavel', atencao:'badge-atencao', critico:'badge-critico', saindo:'badge-saindo', sem_registro:'badge-sem_registro' };
+  return map[status] || 'badge-sem_registro';
+}
+function getStatusLabel(status) {
+  const map = { satisfeito:'✅ Satisfeito', estavel:'🔵 Estável', atencao:'⚠️ Atenção', critico:'🔴 Crítico', saindo:'⛔ Saindo', sem_registro:'— Sem Registro' };
+  return map[status] || '—';
+}
+function getHistoryColor(status) {
+  const map = { satisfeito:'#16a34a', estavel:'#2563eb', atencao:'#d97706', critico:'#dc2626', saindo:'#6b7280', sem_registro:'#9ca3af' };
+  return map[status] || '#9ca3af';
+}
+
+function renderSummary() {
+  const counts = { todos: clients.length, satisfeito: 0, estavel: 0, atencao: 0, critico: 0, saindo: 0, sem_registro: 0 };
+  clients.forEach(c => { if (counts[c.status] !== undefined) counts[c.status]++; });
+  Object.keys(counts).forEach(k => {
+    const el = document.getElementById('cnt-' + k);
+    if (el) el.textContent = counts[k];
+  });
+  document.getElementById('total-label').textContent = clients.length + ' clientes ativos';
+}
+
+function renderClients() {
+  const grid = document.getElementById('client-grid');
+  const empty = document.getElementById('empty-state');
+  const filtered = clients.filter(c => {
+    const matchFilter = currentFilter === 'todos' || c.status === currentFilter;
+    const q = currentSearch.toLowerCase();
+    const matchSearch = !q || c.nome.toLowerCase().includes(q) || c.apelido.toLowerCase().includes(q) ||
+      c.sponsor.toLowerCase().includes(q) || c.champion.toLowerCase().includes(q);
+    return matchFilter && matchSearch;
+  });
+  if (filtered.length === 0) {
+    grid.innerHTML = ''; empty.classList.remove('hidden');
+  } else {
+    empty.classList.add('hidden');
+    grid.innerHTML = filtered.map(c => `
+      <div class="client-card" onclick="openClient('${c.id}')">
+        <div class="client-card-header">
+          <div class="client-name">${c.nome}</div>
+          <span class="badge ${getBadgeClass(c.status)}">${getStatusLabel(c.status).replace(/[✅🔵⚠️🔴⛔—] ?/,'')}</span>
+        </div>
+        <div class="client-meta">👤 ${c.sponsor} ${c.champion !== c.sponsor ? '· ' + c.champion : ''}</div>
+        <div class="client-resumo">${c.resumo}</div>
+        <div class="client-updated">${c.ultimaAtualizacao !== '—' ? '📅 Último registro: ' + new Date(c.ultimaAtualizacao).toLocaleDateString('pt-BR') : '📅 Sem registros'}</div>
+      </div>
+    `).join('');
+  }
+}
+
+function filterClients(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('.summary-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderClients();
+}
+
+function searchClients(q) {
+  currentSearch = q;
+  renderClients();
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function openClient(id) {
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('modal-title').textContent = c.nome;
+  document.getElementById('modal-sub').innerHTML = `
+    <span class="badge ${getBadgeClass(c.status)}" style="margin-right:8px">${getStatusLabel(c.status)}</span>
+    Sponsor: <strong>${c.sponsor}</strong> · Champion: <strong>${c.champion}</strong>`;
+
+  let html = '';
+
+  // Resumo atual
+  html += `<div class="modal-section"><h3>📊 Situação Atual</h3><p style="font-size:14px;line-height:1.7;color:#334155">${c.resumo}</p></div>`;
+
+  // Ações pendentes
+  if (c.acoes.length > 0) {
+    html += `<div class="modal-section"><h3>✅ Ações Pendentes</h3><ul class="actions-list">`;
+    c.acoes.forEach(a => {
+      html += `<li><span class="action-owner">${a.responsavel}:</span> ${a.acao}</li>`;
+    });
+    html += '</ul></div>';
+  }
+
+  // Histórico
+  if (c.historico.length > 0) {
+    html += `<div class="modal-section"><h3>📅 Histórico por Reunião</h3>`;
+    [...c.historico].reverse().forEach(h => {
+      const d = new Date(h.data).toLocaleDateString('pt-BR', {day:'2-digit',month:'long',year:'numeric'});
+      html += `<div class="history-item" style="border-left-color:${getHistoryColor(c.status)}">
+        <div class="history-date">${d}</div>
+        <div class="history-text">${h.texto}</div>
+      </div>`;
+    });
+    html += '</div>';
+  } else {
+    html
